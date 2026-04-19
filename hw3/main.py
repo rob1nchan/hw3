@@ -258,3 +258,41 @@ print(f"PHF5  = {peak_count} / (12 × {max_5min}) = {phf5:.4f}")
 print(f"最大15分钟刷卡量（{t15_start.strftime('%H:%M')}~{t15_end.strftime('%H:%M')}）：{max_15min} 次")
 print(f"PHF15 = {peak_count} / ( 4 × {max_15min}) = {phf15:.4f}")
 print("\n✅ 任务4完成！")
+
+
+# ════════════════════════════════════════════════════════════
+# 任务5：线路驾驶员信息批量导出
+# ════════════════════════════════════════════════════════════
+print("\n" + "=" * 60)
+print("任务5：线路驾驶员信息批量导出")
+print("=" * 60)
+
+# 创建输出文件夹，exist_ok=True 表示文件夹已存在也不报错
+output_dir = '线路驾驶员信息'
+os.makedirs(output_dir, exist_ok=True)
+
+# 筛选线路号在 1101~1120 范围内的所有记录
+df_sel = df[(df['线路号'] >= 1101) & (df['线路号'] <= 1120)]
+
+# 对1101到1120的每条线路逐一处理
+for route_id in range(1101, 1121):
+    # 筛选该线路，取车辆编号和驾驶员编号两列，去重，按车辆编号排序
+    df_r = (df_sel[df_sel['线路号'] == route_id][['车辆编号', '驾驶员编号']]
+            .drop_duplicates()
+            .sort_values('车辆编号')
+            .reset_index(drop=True))
+
+    # 生成文件路径，如 线路驾驶员信息/1101.txt
+    filepath = os.path.join(output_dir, f'{route_id}.txt')
+
+    # 写入文件
+    with open(filepath, 'w', encoding='utf-8') as f:
+        f.write(f'线路号: {route_id}\n')
+        f.write('车辆编号\t驾驶员编号\n')
+        for _, row in df_r.iterrows():
+            f.write(f'{int(row["车辆编号"])}\t\t{int(row["驾驶员编号"])}\n')
+
+    print(f'已生成：{os.path.abspath(filepath)}')
+
+print("\n20个文件全部生成成功！")
+print("\n✅ 任务5完成！")
