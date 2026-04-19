@@ -206,3 +206,55 @@ plt.savefig('route_stops.png', dpi=150)
 plt.close()
 print("\n图像已保存：route_stops.png")
 print("\n✅ 任务3完成！")
+
+
+# ════════════════════════════════════════════════════════════
+# 任务4：高峰小时系数计算
+# ════════════════════════════════════════════════════════════
+print("\n" + "=" * 60)
+print("任务4：高峰小时系数计算")
+print("=" * 60)
+
+# 统计全天每个小时的刷卡总次数
+hourly_total = df.groupby('hour').size()
+
+# 自动找出刷卡量最大的那个小时
+peak_hour  = int(hourly_total.idxmax())   # 高峰小时数字（如 8）
+peak_count = int(hourly_total[peak_hour]) # 高峰小时总刷卡量
+
+print(f"\n高峰小时为 {peak_hour}:00-{peak_hour+1}:00，刷卡量 {peak_count} 次")
+
+# 筛选高峰小时内的数据，把交易时间设为索引（resample必须用时间索引）
+df_peak = (df[df['hour'] == peak_hour]
+             .set_index('交易时间')
+             .sort_index())
+
+# 按5分钟粒度统计，找出最大5分钟刷卡量
+# resample('5min') 把数据按每5分钟分成一组，size()统计每组记录数
+resample_5  = df_peak.resample('5min').size()
+max_5min    = int(resample_5.max())        # 最大5分钟刷卡量
+t5_start    = resample_5.idxmax()          # 最大5分钟的起始时间
+t5_end      = t5_start + pd.Timedelta(minutes=5)   # 结束时间
+
+# PHF5公式：高峰小时量 ÷ (12 × 最大5分钟量)
+# 1小时=60分钟，60÷5=12个区间
+phf5 = peak_count / (12 * max_5min)
+
+# 按15分钟粒度统计，找出最大15分钟刷卡量
+# resample('15min') 把数据按每15分钟分成一组
+resample_15 = df_peak.resample('15min').size()
+max_15min   = int(resample_15.max())       # 最大15分钟刷卡量
+t15_start   = resample_15.idxmax()         # 最大15分钟的起始时间
+t15_end     = t15_start + pd.Timedelta(minutes=15) # 结束时间
+
+# PHF15公式：高峰小时量 ÷ (4 × 最大15分钟量)
+# 1小时=60分钟，60÷15=4个区间
+phf15 = peak_count / (4 * max_15min)
+
+# 格式化输出结果
+print(f"\n高峰小时：{peak_hour:02d}:00 ~ {peak_hour+1:02d}:00，刷卡量：{peak_count} 次")
+print(f"最大5分钟刷卡量（{t5_start.strftime('%H:%M')}~{t5_end.strftime('%H:%M')}）：{max_5min} 次")
+print(f"PHF5  = {peak_count} / (12 × {max_5min}) = {phf5:.4f}")
+print(f"最大15分钟刷卡量（{t15_start.strftime('%H:%M')}~{t15_end.strftime('%H:%M')}）：{max_15min} 次")
+print(f"PHF15 = {peak_count} / ( 4 × {max_15min}) = {phf15:.4f}")
+print("\n✅ 任务4完成！")
