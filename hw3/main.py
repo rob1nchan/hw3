@@ -138,3 +138,71 @@ plt.savefig('hour_distribution.png', dpi=150)
 plt.close()
 print("\n图像已保存：hour_distribution.png")
 print("\n✅ 任务2完成！")
+
+
+# ════════════════════════════════════════════════════════════
+# 任务3：线路站点分析
+# ════════════════════════════════════════════════════════════
+print("\n" + "=" * 60)
+print("任务3：线路站点分析")
+print("=" * 60)
+
+# 定义函数（函数名和参数名严格按照题目要求，不能改）
+def analyze_route_stops(df, route_col='线路号', stops_col='ride_stops'):
+    """
+    计算各线路乘客的平均搭乘站点数及其标准差。
+    Parameters
+    ----------
+    df : pd.DataFrame  预处理后的数据集
+    route_col : str    线路号列名
+    stops_col : str    搭乘站点数列名
+    Returns
+    -------
+    pd.DataFrame  包含列：线路号、mean_stops、std_stops，按 mean_stops 降序排列
+    """
+    # 按线路号分组，同时计算均值和标准差
+    result = (df.groupby(route_col)[stops_col]
+                .agg(mean_stops='mean', std_stops='std')  # 聚合计算均值和标准差
+                .reset_index()                             # 把线路号还原为普通列
+                .sort_values('mean_stops', ascending=False)  # 按均值降序排列
+                .reset_index(drop=True))                   # 重置行序号
+    return result
+
+# 调用函数，打印前10行
+route_stats = analyze_route_stops(df)
+print("\n各线路平均搭乘站点数（前10条）：")
+print(route_stats.head(10).to_string(index=False))
+
+# 取均值最高的前15条线路的线路号列表
+top15_route_ids = route_stats.head(15)['线路号'].tolist()
+
+# 从原始数据里筛选出这15条线路的所有记录
+# seaborn 需要原始数据才能自动计算误差棒，不能直接用聚合结果
+df_top15 = df[df['线路号'].isin(top15_route_ids)].copy()
+df_top15['线路号'] = df_top15['线路号'].astype(str)          # 转字符串方便显示
+top15_order = [str(r) for r in top15_route_ids]             # 保持降序排列顺序
+
+# 用 seaborn 绘制水平条形图
+fig, ax = plt.subplots(figsize=(10, 8))
+sns.barplot(
+    data=df_top15,
+    x='ride_stops',
+    y='线路号',
+    hue='线路号',          # 加上这一行
+    order=top15_order,
+    errorbar='sd',
+    capsize=0.3,
+    palette='Blues_d',
+    orient='h',
+    legend=False,          # 加上这一行
+    ax=ax
+)
+ax.set_xlim(left=0)        # x轴从0开始
+ax.set_title('各线路平均搭乘站点数 Top 15', fontsize=15, fontweight='bold', pad=12)
+ax.set_xlabel('平均搭乘站点数', fontsize=13)
+ax.set_ylabel('线路号', fontsize=13)
+plt.tight_layout()
+plt.savefig('route_stops.png', dpi=150)
+plt.close()
+print("\n图像已保存：route_stops.png")
+print("\n✅ 任务3完成！")
